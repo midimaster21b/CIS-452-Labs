@@ -24,16 +24,11 @@ void print_proc_stats(int proc_who);
 
 int main(int argc, char*argv[]) {
 
-  int proc_retval;
-  pid_t proc_pid;
-
   puts("This is a shell program for UNIX systems. Please insert UNIX commands: ");
 
   char buffer[SIZE];
-  char* temp;
   char* vector[SIZE];
   int spot;
-  pid_t pid, child;
   int status;
   while(1){
     fgets(buffer, SIZE, stdin);
@@ -58,7 +53,6 @@ int main(int argc, char*argv[]) {
       waitpid(-1, &status, WUNTRACED);
 
       /* proc_pid = wait(&proc_retval); */
-      /* /\* print_proc_status(RUSAGE_SELF); *\/ */
       /* print_proc_stats(RUSAGE_CHILDREN); */
     }
 
