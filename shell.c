@@ -18,9 +18,12 @@
 #include <unistd.h>
 #include <wait.h>
 
+#include <ctype.h>
+
 #define INPUT_BUFFER_SIZE 256
 
 void print_proc_stats(int proc_who);
+char *trim_whitespace(char *str);
 
 int main(int argc, char*argv[]) {
 
@@ -116,4 +119,24 @@ void print_proc_stats(int proc_who) {
   printf("=================\n");
   printf("User CPU time used: %02ld s, %ld us\n", process_user_seconds, process_user_microseconds);
   printf("Involuntary context switches: %ld\n", process_inv_cont_switches);
+}
+
+char *trim_whitespace(char *str) {
+  // Remove leading and trailing whitespace
+  char *temp = str;
+  char *temp_two;
+
+  // Remove leading whitespace
+  while(isspace(*temp))
+    temp++;
+
+  // Move past all non-space characters
+  temp_two = temp;
+  while(!isspace(*temp_two))
+    temp_two++;
+
+  // End string (Removing all following whitespace)
+  *temp_two = '\0';
+
+  return temp;
 }
