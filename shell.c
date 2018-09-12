@@ -12,35 +12,41 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-#define SIZE 200
+#define SIZE 256
 
 
 int main(int argc, char*argv[])
 {
 	puts("This is a shell program for UNIX systems. Please insert UNIX commands: ");
-	//puts("Input must be less than 200 characters");
 	
 	char buffer[SIZE];
 	char* temp;
-	char vector[SIZE];
+	char* vector[SIZE];
 	int spot;
-
-	fgets(buffer, SIZE, stdin);
-	printf("%s%s\n","BUFFER: ", buffer);	
-	temp = strtok(buffer, " ");
-	spot = 0;
-	while(temp != NULL){
-		printf("%s%s\n","temp: ", temp);
-		printf("%s%i\n", "spot: ", spot);
-		strcat(vector,temp);
-		//vector += temp;
-		temp = strtok (NULL, " ");
-		spot += 1;
+	pid_t pid, child;
+	int status;
+	while(1){
+		fgets(buffer, SIZE, stdin);
+		for(spot = 0; buffer[spot]!='\0'; spot = spot + 1){
+			vector[spot] = strtok(buffer, " ");
+		}
+		if(!strcmp(vector[0], "quit")){
+			puts("Exiting");
+			exit(0);
+		}
+		if((pid = fork()) < 0){
+			perror("fork failed");
+			exit(0);
+		}
+		else if(pid){
+			waitpid(-1, &status, WUNTRACED);
+		}
+		else{
+			execvp(vector[0],vector);
+			exit(0);
+		}
 	}
-	printf("%s%s\n","vector: ", vector);
-	puts("Thanks good bye");
-	exit(0);
-	
-
 }
