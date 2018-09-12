@@ -18,49 +18,68 @@
 #include <unistd.h>
 #include <wait.h>
 
-#define SIZE 256
+#define INPUT_BUFFER_SIZE 256
 
 void print_proc_stats(int proc_who);
 
 int main(int argc, char*argv[]) {
 
+  // Initialize variables
+  char buffer[INPUT_BUFFER_SIZE];
+  char* vector[INPUT_BUFFER_SIZE];
+  int spot;
+  int child_status;
+
+  // Prompt the user to enter a command
   puts("This is a shell program for UNIX systems. Please insert UNIX commands: ");
 
-  char buffer[SIZE];
-  char* vector[SIZE];
-  int spot;
-  int status;
-  while(1){
-    fgets(buffer, SIZE, stdin);
-    for(spot = 0; buffer[spot]!='\0'; spot = spot + 1){
+  // Main program loop (REPL)
+  while(1) {
+
+    // Get the user input string
+    fgets(buffer, INPUT_BUFFER_SIZE - 1, stdin);
+
+    // Tokenize the user input string
+    for(spot = 0; buffer[spot]!='\0'; spot++) {
       vector[spot] = strtok(buffer, " ");
     }
+
+    // Check if the user input the "quit" command
     if(!strcmp(vector[0], "quit")){
       puts("Exiting");
-      exit(0);
+      break;
     }
 
+    // Create a new process for running the new command
     pid_t child_pid = fork();
 
     // Fork error occurred
-    if(child_pid < 0){
+    if(child_pid < 0) {
+
+      // Print the error to the user
       perror("Error: An error occurred when forking the command.\n");
-      exit(0);
+
+      // Return from the program
+      return(1);
     }
 
     // Parent code
-    else if(child_pid){
-      waitpid(-1, &status, WUNTRACED);
+    else if(child_pid) {
+
+      // Wait for the child process to complete
+      waitpid(-1, &child_status, WUNTRACED);
 
       /* proc_pid = wait(&proc_retval); */
       /* print_proc_stats(RUSAGE_CHILDREN); */
     }
 
     // Child code
-    else{
-      execvp(vector[0],vector);
-      exit(0);
-
+    else {
+      printf("Child: %s\n", vector[0]);
+      execvp(vector[0], (char *const *)NULL);
+      break;
+      // Exec the appropriate file
+      /* execvp(vector[0],vector); */
       /* execv("ls", NULL); */
     }
   }
