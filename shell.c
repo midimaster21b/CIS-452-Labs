@@ -14,7 +14,7 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/wait.h>
+/* #include <sys/wait.h> */
 #include <unistd.h>
 #include <wait.h>
 #include <ctype.h>
@@ -92,23 +92,23 @@ int main(int argc, char*argv[]) {
     else if(child_pid) {
 
       // Wait for the child process to complete
-      waitpid(-1, &child_status, WUNTRACED);
+      // NOTE: this reassignment wouldn't be proper in a large scale program.
+      child_pid = wait(&child_status);
 
-      /* proc_pid = wait(&proc_retval); */
+      printf("\n");
+
+      // Print the process usage statistics
       print_proc_stats(RUSAGE_CHILDREN);
+      /* print_proc_stats(RUSAGE_SELF); */
+
+      printf("\n");
     }
 
     // Child code
     else {
-      printf("Child: %s\n", vector[0]);
 
-      /* execvp(vector[0], &(vector[1])); */
+      // Exec the process
       execvp(vector[0], vector);
-      /* execv("ls", NULL); */
-
-      printf("Child: after...\n");
-
-      break;
     }
   }
 
