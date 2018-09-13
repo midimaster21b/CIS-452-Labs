@@ -17,7 +17,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <wait.h>
-
 #include <ctype.h>
 
 #define INPUT_BUFFER_SIZE 256
@@ -32,25 +31,48 @@ int main(int argc, char*argv[]) {
   char* vector[INPUT_BUFFER_SIZE];
   int spot;
   int child_status;
+  char *temp;
 
-  // Prompt the user to enter a command
-  puts("This is a shell program for UNIX systems. Please insert UNIX commands: ");
+  // Welcome the user to the shell
+  puts("Welcome to the shell!\n");
 
   // Main program loop (REPL)
   while(1) {
 
+    // Prompt the user to enter a command
+    printf("Enter command: ");
+
     // Get the user input string
     fgets(buffer, INPUT_BUFFER_SIZE - 1, stdin);
 
-    // Tokenize the user input string
-    for(spot = 0; buffer[spot]!='\0'; spot++) {
-      vector[spot] = strtok(buffer, " ");
-    }
+    // Trim the whitespace of the buffer for comparison
+    temp = trim_whitespace(buffer);
 
     // Check if the user input the "quit" command
-    if(!strcmp(vector[0], "quit")){
-      puts("Exiting");
+    if(!strcmp(temp, "quit")){
+      puts("Goodbye!");
+      free(temp);
       break;
+    }
+    free(temp);
+
+    // Tokenize the user input string
+    spot = 0;
+
+    while(1) {
+      if(spot == 0) {
+	vector[spot] = strtok(buffer, " ");
+      } else {
+	vector[spot] = strtok(NULL, " ");
+      }
+
+      if(vector[spot] == NULL) {
+	break;
+      }
+      else {
+	vector[spot] = trim_whitespace(vector[spot]);
+	spot += 1;
+      }
     }
 
     // Create a new process for running the new command
@@ -73,17 +95,20 @@ int main(int argc, char*argv[]) {
       waitpid(-1, &child_status, WUNTRACED);
 
       /* proc_pid = wait(&proc_retval); */
-      /* print_proc_stats(RUSAGE_CHILDREN); */
+      print_proc_stats(RUSAGE_CHILDREN);
     }
 
     // Child code
     else {
       printf("Child: %s\n", vector[0]);
-      execvp(vector[0], (char *const *)NULL);
-      break;
-      // Exec the appropriate file
-      /* execvp(vector[0],vector); */
+
+      /* execvp(vector[0], &(vector[1])); */
+      execvp(vector[0], vector);
       /* execv("ls", NULL); */
+
+      printf("Child: after...\n");
+
+      break;
     }
   }
 
@@ -123,20 +148,31 @@ void print_proc_stats(int proc_who) {
 
 char *trim_whitespace(char *str) {
   // Remove leading and trailing whitespace
-  char *temp = str;
-  char *temp_two;
+  char *str_start = str;
+  char *str_end;
+  int str_size;
 
   // Remove leading whitespace
-  while(isspace(*temp))
-    temp++;
+  while(isspace(*str_start))
+    str_start++;
 
   // Move past all non-space characters
-  temp_two = temp;
-  while(!isspace(*temp_two))
-    temp_two++;
+  str_end = str_start;
+  while(!isspace(*str_end) && *str_end != '\0')
+    str_end++;
 
-  // End string (Removing all following whitespace)
-  *temp_two = '\0';
+  // Calculate necessary string size
+  str_size = str_end - str_start;
 
-  return temp;
+  // Malloc space for retval (+1 for null character)
+  char *retval = malloc(str_size + 1);
+
+  // Copy string to return value
+  retval = strncpy(retval, str_start, str_size);
+
+  // Ensure string is null-terminated
+  *(retval + str_size) = '\0';
+
+  // Return the trimmed string
+  return retval;
 }
