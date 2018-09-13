@@ -14,7 +14,7 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
-/* #include <sys/wait.h> */
+#include <sys/wait.h>
 #include <unistd.h>
 #include <wait.h>
 #include <ctype.h>
@@ -29,8 +29,7 @@ int main(int argc, char*argv[]) {
   // Initialize variables
   char buffer[INPUT_BUFFER_SIZE];
   char* vector[INPUT_BUFFER_SIZE];
-  int spot;
-  int child_status;
+  int spot, x, child_status;
   char *temp;
 
   // Welcome the user to the shell
@@ -90,23 +89,27 @@ int main(int argc, char*argv[]) {
 
     // Parent code
     else if(child_pid) {
+      // Clean up allocated memory
+      for(x=0; x<=spot; x++) {
+	free(vector[x]);
+      }
 
       // Wait for the child process to complete
-      // NOTE: this reassignment wouldn't be proper in a large scale program.
-      child_pid = wait(&child_status);
+      waitpid(-1, &child_status, WUNTRACED);
 
+      // Separate program output from statistics
       printf("\n");
 
       // Print the process usage statistics
       print_proc_stats(RUSAGE_CHILDREN);
-      /* print_proc_stats(RUSAGE_SELF); */
 
+      // Separate statistics from next prompt
       printf("\n");
+
     }
 
     // Child code
     else {
-
       // Exec the process
       execvp(vector[0], vector);
     }
@@ -124,6 +127,10 @@ void print_proc_stats(int proc_who) {
   long   process_user_microseconds;
   long   process_inv_cont_switches;
 
+  static long process_cumulative_seconds = 0;
+  static long process_cumulative_micros = 0;
+  static long process_cumulative_inv_cont_switches = 0;
+
   // Get process resource usage
   usage_retval = getrusage(process_who, &process_usage);
 
@@ -135,9 +142,15 @@ void print_proc_stats(int proc_who) {
   }
 
   // Get necessary usage statistic values
-  process_user_seconds = process_usage.ru_utime.tv_sec;
-  process_user_microseconds = process_usage.ru_utime.tv_usec;
-  process_inv_cont_switches = process_usage.ru_nivcsw;
+  process_user_seconds = process_usage.ru_utime.tv_sec - process_cumulative_seconds;
+  process_user_microseconds = process_usage.ru_utime.tv_usec - process_cumulative_micros;
+  process_inv_cont_switches = process_usage.ru_nivcsw - process_cumulative_inv_cont_switches;
+
+
+  // Update cumulative stats
+  process_cumulative_seconds = process_usage.ru_utime.tv_sec;
+  process_cumulative_micros = process_usage.ru_utime.tv_usec;
+  process_cumulative_inv_cont_switches = process_usage.ru_nivcsw;
 
   // Output usage statistics information
   printf("Usage information\n");
