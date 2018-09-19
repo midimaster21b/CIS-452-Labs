@@ -44,7 +44,7 @@ int main() {
       sleep(r);
 
       // Send a random signal to the parent
-      if(r % 2) {
+      if(rand() % 2) {
 	kill(parent_pid, SIGUSR1);
       }
       else {
@@ -61,7 +61,7 @@ int main() {
 
       // Print waiting
       printf("Waiting...\t\t");
-
+      fflush(stdout);
       // Wait for interrupt to occur
       pause();
 
