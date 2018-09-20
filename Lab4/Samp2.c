@@ -52,7 +52,8 @@ void* do_greeting2 (void* arg)
     int val = rand() % 2;
 
 // print out message based on val 
-    for (int loop = 0;  loop < 10;  loop++) { 
+    for (int loop = 0;  loop < 10;  loop++) {
+	sleep(1); 
         if (!val) 
             cout << "Hello "; 
         else 
