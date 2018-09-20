@@ -155,9 +155,12 @@ void sigHandlerParent(int sig_num, siginfo_t *sig_inf, void *context) {
   // Switch on the supplied signal
   switch(sig_num) {
   case SIGINT:
-    // Kill the child
+    // Kill the child processes
     kill(child_pid[0], SIGINT);
     kill(child_pid[1], SIGINT);
+
+    // Free malloc'd memory
+    free(sig_act_struct);
 
     // Print we're leaving
     printf(" received. That's it, I'm shutting down...\n");
