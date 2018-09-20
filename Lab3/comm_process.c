@@ -1,19 +1,28 @@
+/***************************************************************
+ * Title: comm_process.c
+ * Authors: Joshua Edgcombe <joshedgcombe@gmail.com>
+ *          Patton Finley <finleyp@mail.gvsu.edu>
+ *
+ * Description: A simple program showing the appropriate use of
+ *              linux signals.
+ **************************************************************/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
-
 #include <time.h>
-/* #include <stdlib.h> */
 
+// Prototypes for the signal handlers
 void sigHandlerParent(int);
 void sigHandlerChild(int);
 
-int main() {
+// Global variables for tracking parent and child PID's
+pid_t child_pid, parent_pid;
 
+int main() {
   // Process ID variables
-  pid_t child_pid = fork();
-  pid_t parent_pid;
+  child_pid = fork();
 
   // Random number
   srand(time(NULL));   // should only be called once
@@ -21,9 +30,8 @@ int main() {
 
   // Child process
   if(child_pid == 0) {
-
+    // Get parent process PID
     parent_pid = getppid();
-
   }
 
   // Error handling (child_pid < 0)
@@ -38,6 +46,8 @@ int main() {
       // Register child signal handler
       signal(SIGINT, sigHandlerChild);
 
+      // Get a random number for the amount of time
+      // for the child process to sleep for.
       r = (rand() % 4) + 1;
 
       // Wait some random time
@@ -59,14 +69,12 @@ int main() {
       signal(SIGUSR1, sigHandlerParent);
       signal(SIGUSR2, sigHandlerParent);
 
-      // Print waiting
+      // Print waiting and flush to the terminal (print immediately)
       printf("Waiting...\t\t");
       fflush(stdout);
+
       // Wait for interrupt to occur
       pause();
-
-      // Register parent signal handler
-      signal(SIGINT, sigHandlerParent);
     }
   }
 
@@ -74,27 +82,32 @@ int main() {
 }
 
 void sigHandlerParent(int sigNum) {
+
+  // Siwtch on the supplied signal
   switch(sigNum) {
   case SIGINT:
-    // Kill child
-    // kill();
+    // Kill the child
+    kill(child_pid, SIGINT);
 
     // Print we're leaving
-    printf ("outta here.\n");
+    printf(" received. That's it, I'm shutting down...\n");
 
     // Exit program
     exit(0);
     break;
 
   case SIGUSR1:
+    // Print appropriate signal to the terminal
     printf("SIGUSR1 detected...\n");
     break;
 
   case SIGUSR2:
+    // Print appropriate signal to the terminal
     printf("SIGUSR2 detected...\n");
     break;
 
   default:
+    // Handle unknown signals
     printf("Unknown signal detected...\n");
     break;
   }
