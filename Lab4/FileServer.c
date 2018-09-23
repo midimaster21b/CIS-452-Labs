@@ -65,7 +65,7 @@ int main() {
 }
 
 void *retrieve_file(void *filename) {
-  char thread_filename[MAX_FILENAME_LENGTH + 1] = {0};
+  char thread_filename[MAX_FILENAME_LENGTH] = {0};
   char *status;
   int wait_time = 0;
 
