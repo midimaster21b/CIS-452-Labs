@@ -141,6 +141,8 @@ void process_kill_handler(int signal_id) {
   // Print out the final average
   printf("\n\nNumber of files requested: %ld\n", num_requests);
   printf("Number of files retrieved: %ld\n", num_retrievals);
+
+  // Handle zero retrievals case
   if(num_retrievals != 0) {
     printf("Average retrieval time: %lf\n", running_avg);
   }
