@@ -141,7 +141,17 @@ int main(void) {
 }
 
 void signal_handler(int SIGNUM) {
+  int count;
+
   printf("Exiting...\n");
+
+  // Set header to location beginning of shared memory
+  msg_mem_header *header = (msg_mem_header *)shmPtr;
+
+  // Decrement count
+  pthread_mutex_lock(&(header->count_lock));
+  count = --header->count;
+  pthread_mutex_unlock(&(header->count_lock));
 
   // Detach from shared memory
   if(shmdt(shmPtr) < 0) {
@@ -149,16 +159,8 @@ void signal_handler(int SIGNUM) {
     exit(1);
   }
 
-  // Set header to location beginning of shared memory
-  msg_mem_header *header = (msg_mem_header *)shmPtr;
-
-  // Decrement count
-  pthread_mutex_lock(&(header->count_lock));
-  header->count--;
-  pthread_mutex_unlock(&(header->count_lock));
-
   // If last client using shared memory region
-  if(header->count <= 1) {
+  if(count <= 1) {
     printf("Freeing shared memory region...\n");
 
     // Deallocate shared memory
@@ -207,12 +209,25 @@ void *reader_thread(void *shared_mem_region) {
   // Message pointer
   char *shmMsgPtr = (shared_mem_region+MESSAGE_OFFSET);
 
+  // Setup message header memory region
+  msg_mem_header *header = (msg_mem_header *)shmPtr;
+
   while(1) {
+
+
     // If contents have been updated
     if(strcmp(shmMsgPtr, reader_contents) != 0) {
 
+      // Forces only one reader at a time and
+      // gives priority to the writer
+      pthread_mutex_lock(&(header->read_lock));
+      pthread_mutex_lock(&(header->write_lock));
+
       // Update the contents of the current string
       strcpy(reader_contents, shmMsgPtr);
+
+      pthread_mutex_unlock(&(header->write_lock));
+      pthread_mutex_unlock(&(header->read_lock));
 
       // Print out the updated string
       printf("\n%s", reader_contents);
