@@ -14,22 +14,39 @@
 #include <sys/shm.h>
 #include <signal.h>
 #include <string.h>
+#include <pthread.h>
+#include <unistd.h>
+
+typedef struct msg_mem_header {
+  // Number of attached clients
+  int count;
+  pthread_mutex_t count_lock;
+
+  // Write protection
+  pthread_mutex_t write_lock;
+
+} msg_mem_header;
 
 #define MAX_MESSAGE_LENGTH 1024
-#define MESSAGE_OFFSET 0
+#define MESSAGE_OFFSET sizeof(msg_mem_header)
 #define MEM_SIZE (MAX_MESSAGE_LENGTH + MESSAGE_OFFSET)
-#define SHM_KEY 1024
 
 void signal_handler(int SIGNUM);
+void *writer_thread(void *shared_mem_region);
+void *reader_thread(void *shared_mem_region);
 
 const char *key_path = ".";
 const int project_id = 1;
 
 int shmId;
 char *shmPtr;
-char contents[MAX_MESSAGE_LENGTH] = {0};
 
 int main(void) {
+
+  int first_time_flag = 0;
+  int status;
+  msg_mem_header *header;
+  pthread_t temp_thread_handle;
 
   // Register signal handler function
   signal(SIGINT, signal_handler);
@@ -37,20 +54,28 @@ int main(void) {
   printf("Welcome to the reader program!\n");
   printf("==============================\n");
 
-  char *shmMsgPtr;
   int shared_mem_key = ftok(key_path, project_id);
 
-#ifdef WRITER
-  // Allocate shared memory
-  if((shmId = shmget(shared_mem_key, shared_mem_key, IPC_CREAT|S_IRUSR|S_IWUSR)) < 0)
-#else
+  printf("Retrieving memory region...\n");
+
   // Retrieve the shared memory region
-  if((shmId = shmget(shared_mem_key, shared_mem_key, S_IRUSR|S_IWUSR)) < 0)
-#endif
-  {
-    perror("ERROR: Unable to retrieve a shared memory segment.\n");
-    exit(1);
+  if((shmId = shmget(shared_mem_key, shared_mem_key, S_IRUSR|S_IWUSR)) < 0){
+    printf("Shared memory region not found, creating now...\n");
+
+    // Allocate shared memory
+    if((shmId = shmget(shared_mem_key, shared_mem_key, IPC_CREAT|S_IRUSR|S_IWUSR)) >= 0) {
+      // Set first time flag for initialization
+      first_time_flag = 1;
+    }
+
+    else {
+      // Handle error during initialization
+      perror("ERROR: Unable to retrieve a shared memory segment.\n");
+      exit(1);
+    }
   }
+
+  printf("Attaching memory region to client...\n");
 
   // Attach to shared memory
   if((shmPtr = shmat(shmId, 0, 0)) == (void*) -1) {
@@ -58,30 +83,40 @@ int main(void) {
     exit(1);
   }
 
-  shmMsgPtr = (shmPtr+MESSAGE_OFFSET); // Message pointer
+  printf("Memory region attached...\n");
 
-  // Write to/read from memory
-  while(1) {
-#ifdef WRITER
-    printf("Please enter a string to write to shared memory: ");
-    fgets(contents, MAX_MESSAGE_LENGTH, stdin);
+  // If first client
+  if(first_time_flag) {
+    // Perform first client initialization
+    // Set header to location of shared memory
+    header = (msg_mem_header *)shmPtr;
 
-    // Update the contents of the current string
-    strcpy(shmMsgPtr, contents);
-#else
-    // If contents have been updated
-    if(strcmp(shmMsgPtr, contents) != 0) {
-      // Update the contents of the current string
-      strcpy(contents, shmMsgPtr);
+    // Set count to 1
+    header->count = 1;
 
-      // Print out the updated string
-      printf("%s", contents);
+    // Initialize count mutex
+    if((status = pthread_mutex_init(&(header->count_lock), NULL)) != 0) {
+      printf("Mutex init error %d: %s\n", status, strerror(status));
+
+      // Not so elegant exit routine
+      signal_handler(SIGINT);
     }
-    else {
 
+    // Initialize write mutex
+    if((status = pthread_mutex_init(&(header->write_lock), NULL)) != 0) {
+      printf("Mutex init error %d: %s\n", status, strerror(status));
+
+      // Not so elegant exit routine
+      signal_handler(SIGINT);
     }
-#endif
   }
+
+  // Create threads
+  pthread_create(&temp_thread_handle, NULL, writer_thread, shmPtr);
+  pthread_create(&temp_thread_handle, NULL, reader_thread, shmPtr);
+
+  // Busy wait until interrupt
+  while(1);
 
   return 0;
 }
@@ -89,19 +124,71 @@ int main(void) {
 void signal_handler(int SIGNUM) {
   printf("Exiting...\n");
 
+  // Kill threads
+  // TODO: This...
+
   // Detach from shared memory
   if(shmdt(shmPtr) < 0) {
     perror("ERROR: Unable to detach from shared memory.\n");
     exit(1);
   }
 
-#ifdef WRITER
   // Deallocate shared memory
-  if (shmctl (shmId, IPC_RMID, 0) < 0) {
+  if(shmctl(shmId, IPC_RMID, 0) < 0) {
     perror ("ERROR: Unable to deallocate shared memory.\n");
     exit(1);
   }
-#endif
 
   exit(0);
+}
+
+void *writer_thread(void *shared_mem_region) {
+  // Detach the worker thread from the dispatcher
+  pthread_detach(pthread_self());
+
+  char writer_contents[MAX_MESSAGE_LENGTH] = {0};
+
+  // Message pointer
+  char *shmMsgPtr = (shared_mem_region+MESSAGE_OFFSET);
+
+  // Setup message header memory region
+  msg_mem_header *header = (msg_mem_header *)shmPtr;
+
+  while(1) {
+    printf("Please enter a string to write to shared memory: ");
+    fgets(writer_contents, MAX_MESSAGE_LENGTH, stdin);
+
+    // Update the contents of the current string
+    pthread_mutex_lock(&(header->write_lock));
+
+    // Copy string to shared memory region
+    strcpy(shmMsgPtr, writer_contents);
+
+    // Update the contents of the current string
+    pthread_mutex_unlock(&(header->write_lock));
+  }
+}
+
+void *reader_thread(void *shared_mem_region) {
+  // Detach the worker thread from the dispatcher
+  pthread_detach(pthread_self());
+
+  char reader_contents[MAX_MESSAGE_LENGTH] = {0};
+
+  // Message pointer
+  char *shmMsgPtr = (shared_mem_region+MESSAGE_OFFSET);
+
+  while(1) {
+    strcpy(reader_contents, shmMsgPtr);
+
+    // If contents have been updated
+    if(strcmp(shmMsgPtr, reader_contents) != 0) {
+
+      // Update the contents of the current string
+      strcpy(reader_contents, shmMsgPtr);
+
+      // Print out the updated string
+      printf("\n%s", reader_contents);
+    }
+  }
 }
