@@ -143,6 +143,7 @@ int main(void) {
 void signal_handler(int SIGNUM) {
   int count;
 
+  // Prompt the user
   printf("Exiting...\n");
 
   // Set header to location beginning of shared memory
@@ -213,7 +214,6 @@ void *reader_thread(void *shared_mem_region) {
   msg_mem_header *header = (msg_mem_header *)shmPtr;
 
   while(1) {
-
 
     // If contents have been updated
     if(strcmp(shmMsgPtr, reader_contents) != 0) {
