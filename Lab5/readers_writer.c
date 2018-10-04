@@ -4,7 +4,7 @@
  *          Patton Finley <finleyp@mail.gvsu.edu>
  *
  * Description: A simple program showing the appropriate use of
- *              linux shared memory.
+ *              linux shared memory for a basic chat app.
  **************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +24,7 @@ typedef struct msg_mem_header {
 
   // Write protection
   pthread_mutex_t write_lock;
-
+  pthread_mutex_t read_lock;
 } msg_mem_header;
 
 #define MAX_MESSAGE_LENGTH 1024
@@ -109,6 +109,25 @@ int main(void) {
       // Not so elegant exit routine
       signal_handler(SIGINT);
     }
+
+    // Initialize read mutex
+    if((status = pthread_mutex_init(&(header->read_lock), NULL)) != 0) {
+      printf("Mutex init error %d: %s\n", status, strerror(status));
+
+      // Not so elegant exit routine
+      signal_handler(SIGINT);
+    }
+  }
+
+  // Not first time attach
+  else {
+    // Set header to location of shared memory
+    header = (msg_mem_header *)shmPtr;
+
+    // Increment number of clients
+    pthread_mutex_lock(&(header->count_lock));
+    header->count++;
+    pthread_mutex_unlock(&(header->count_lock));
   }
 
   // Create threads
@@ -124,19 +143,29 @@ int main(void) {
 void signal_handler(int SIGNUM) {
   printf("Exiting...\n");
 
-  // Kill threads
-  // TODO: This...
-
   // Detach from shared memory
   if(shmdt(shmPtr) < 0) {
     perror("ERROR: Unable to detach from shared memory.\n");
     exit(1);
   }
 
-  // Deallocate shared memory
-  if(shmctl(shmId, IPC_RMID, 0) < 0) {
-    perror ("ERROR: Unable to deallocate shared memory.\n");
-    exit(1);
+  // Set header to location beginning of shared memory
+  msg_mem_header *header = (msg_mem_header *)shmPtr;
+
+  // Decrement count
+  pthread_mutex_lock(&(header->count_lock));
+  header->count--;
+  pthread_mutex_unlock(&(header->count_lock));
+
+  // If last client using shared memory region
+  if(header->count <= 1) {
+    printf("Freeing shared memory region...\n");
+
+    // Deallocate shared memory
+    if(shmctl(shmId, IPC_RMID, 0) < 0) {
+      perror ("ERROR: Unable to deallocate shared memory.\n");
+      exit(1);
+    }
   }
 
   exit(0);
@@ -179,8 +208,6 @@ void *reader_thread(void *shared_mem_region) {
   char *shmMsgPtr = (shared_mem_region+MESSAGE_OFFSET);
 
   while(1) {
-    strcpy(reader_contents, shmMsgPtr);
-
     // If contents have been updated
     if(strcmp(shmMsgPtr, reader_contents) != 0) {
 
