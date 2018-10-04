@@ -148,7 +148,7 @@ void signal_handler(int SIGNUM) {
   // Set header to location beginning of shared memory
   msg_mem_header *header = (msg_mem_header *)shmPtr;
 
-  // Decrement count
+  // Decrement count and store into count
   pthread_mutex_lock(&(header->count_lock));
   count = --header->count;
   pthread_mutex_unlock(&(header->count_lock));
@@ -218,8 +218,8 @@ void *reader_thread(void *shared_mem_region) {
     // If contents have been updated
     if(strcmp(shmMsgPtr, reader_contents) != 0) {
 
-      // Forces only one reader at a time and
-      // gives priority to the writer
+      // Forces only one reader at a time and gives priority to the writer.
+      // Prevents printing of incomplete written messages as well.
       pthread_mutex_lock(&(header->read_lock));
       pthread_mutex_lock(&(header->write_lock));
 
