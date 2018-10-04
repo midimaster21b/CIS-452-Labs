@@ -22,7 +22,7 @@
 
 void signal_handler(int SIGNUM);
 
-const char *key_path = "/home/midimaster21b/School/CIS452/Labs/Lab5/readers_writer.c";
+const char *key_path = ".";
 const int project_id = 1;
 
 int shmId;
@@ -60,13 +60,6 @@ int main(void) {
 
   shmMsgPtr = (shmPtr+MESSAGE_OFFSET); // Message pointer
 
-  printf("Shared memory pointer: %p\n", shmPtr);
-  printf("Shared memory msg pointer: %p\n", shmMsgPtr);
-  printf("Shared memory id: %d\n", shmId);
-  printf("Shared memory generated key: %d\n", shared_mem_key);
-
-  printf("Current data: %s", shmMsgPtr);
-
   // Write to/read from memory
   while(1) {
 #ifdef WRITER
@@ -75,13 +68,9 @@ int main(void) {
 
     // Update the contents of the current string
     strcpy(shmMsgPtr, contents);
-
-    printf("\nData (%p): %s", shmMsgPtr, shmMsgPtr);
 #else
     // If contents have been updated
     if(strcmp(shmMsgPtr, contents) != 0) {
-      printf("New message found...\n");
-
       // Update the contents of the current string
       strcpy(contents, shmMsgPtr);
 
@@ -93,18 +82,6 @@ int main(void) {
     }
 #endif
   }
-
-  // Detach from shared memory
-  /* if(shmdt(shmPtr) < 0) {  */
-  /*   perror("ERROR: Unable to detach from shared memory.\n");  */
-  /*   exit(1);  */
-  /* }  */
-
-  // Deallocate shared memory
-  /* if (shmctl (shmId, IPC_RMID, 0) < 0) {  */
-  /*   perror ("ERROR: Unable to deallocate shared memory.\n");  */
-  /*   exit(1);  */
-  /* } */
 
   return 0;
 }
