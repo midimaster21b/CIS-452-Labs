@@ -9,14 +9,21 @@
 
 #define SIZE 16
 
-int main()
-{
+int main(int argc, char **argv) {
   int status;
   long int i, loop, temp, *shmPtr;
   int shmId;
   pid_t pid;
 
   // get value of loop variable (from command-line argument)
+  if(argc > 1) {
+    loop = strtol(*(argv+1), NULL, 10);
+    printf("Number of swaps: %ld\n", loop);
+  }
+  else {
+    perror("Usage: Prog1 <num_swaps>\n");
+    exit(1);
+  }
 
   // Get shared memory region.
   if((shmId = shmget(IPC_PRIVATE, SIZE, IPC_CREAT|S_IRUSR|S_IWUSR)) < 0) {
@@ -31,10 +38,16 @@ int main()
   shmPtr[0] = 0;
   shmPtr[1] = 1;
 
+  printf("shmPtr[0]: %p\n", &shmPtr[0]);
+  printf("shmPtr[1]: %p\n", &shmPtr[1]);
+
   // Child behavior
   if(!(pid = fork())) {
     for(i=0; i<loop; i++) {
       // swap the contents of shmPtr[0] and shmPtr[1]
+      temp = shmPtr[0];
+      shmPtr[0] = shmPtr[1];
+      shmPtr[1] = temp;
     }
 
     // Detach shared memory region
@@ -51,6 +64,9 @@ int main()
   else {
     for (i=0; i<loop; i++) {
       // swap the contents of shmPtr[1] and shmPtr[0]
+      temp = shmPtr[1];
+      shmPtr[1] = shmPtr[0];
+      shmPtr[0] = temp;
     }
   }
 
