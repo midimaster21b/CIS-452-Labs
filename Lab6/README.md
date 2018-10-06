@@ -87,8 +87,10 @@ int main ()
 
 1. what exactly does Sample Program 1 intend to do (i.e. who is responsible for what operations)?
 1. given that, what is the program's expected output?
-  + compile Sample Program 1
-  + run the program multiple times with increasing loop values (e.g. 10, 100, 1000, ...) until you observe interesting and unexpected results.
+
+    + compile Sample Program 1
+    + run the program multiple times with increasing loop values (e.g. 10, 100, 1000, ...) until you observe interesting and unexpected results.
+
 1. describe the output of the Sample Program as the loop values increase
 1. describe precisely what is happening to produce the observed interesting output.  Your answer should tie in to the concepts discussed in Chapter 5 of your textbook -- Process Synchronization.
 
