@@ -6,6 +6,9 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
 
 #define SIZE 16
 
@@ -14,6 +17,27 @@ int main(int argc, char **argv) {
   long int i, loop, temp, *shmPtr;
   int shmId;
   pid_t pid;
+
+  // Semaphore variables
+  int sem_id;
+  struct sembuf wait_sbuf;
+  struct sembuf signal_sbuf;
+
+  // Initialize wait sembuf
+  wait_sbuf.sem_num = 0;  // Semaphore zero in set
+  wait_sbuf.sem_op  = -1; // Decrement the semaphore
+  wait_sbuf.sem_flg = 0;  // No flags...?
+
+  // Initialize signal sembuf
+  signal_sbuf.sem_num = 0;  // Semaphore zero in set
+  signal_sbuf.sem_op  = 1; // Decrement the semaphore
+  signal_sbuf.sem_flg = 0;  // No flags...?
+
+  // Create a private semaphore
+  sem_id = semget(IPC_PRIVATE, 1, 00600);
+
+  // Initialize semaphore value to 1
+  semctl(sem_id, 0, SETVAL, 1);
 
   // get value of loop variable (from command-line argument)
   if(argc > 1) {
@@ -44,10 +68,16 @@ int main(int argc, char **argv) {
   // Child behavior
   if(!(pid = fork())) {
     for(i=0; i<loop; i++) {
+      // Wait (decrement semaphore by 1)
+      semop(sem_id, &wait_sbuf, 1);
+
       // swap the contents of shmPtr[0] and shmPtr[1]
       temp = shmPtr[0];
       shmPtr[0] = shmPtr[1];
       shmPtr[1] = temp;
+
+      // Signal (increment semaphore by 1)
+      semop(sem_id, &signal_sbuf, 1);
     }
 
     // Detach shared memory region
@@ -63,10 +93,16 @@ int main(int argc, char **argv) {
   // Parent behavior
   else {
     for (i=0; i<loop; i++) {
+      // Wait (decrement semaphore by 1)
+      semop(sem_id, &wait_sbuf, 1);
+
       // swap the contents of shmPtr[1] and shmPtr[0]
       temp = shmPtr[1];
       shmPtr[1] = shmPtr[0];
       shmPtr[0] = temp;
+
+      // Signal (increment semaphore by 1)
+      semop(sem_id, &signal_sbuf, 1);
     }
   }
 
@@ -75,6 +111,9 @@ int main(int argc, char **argv) {
 
   // Print values of pointer locations
   printf("values: %li\t%li\n", shmPtr[0], shmPtr[1]);
+
+  // Remove semaphore
+  semctl(sem_id, 0, IPC_RMID);
 
   // Detach shared memory region
   if(shmdt(shmPtr) < 0) {
