@@ -24,15 +24,16 @@ Finally, some limits are not defined in any include file, or available via query
 ## Problem Specification
 - use the specified method to determine the values for the following system resources.  Indicate what machine you performed your tests on and provide details regarding your method (i.e. name of include file, system call used, etc.)
 
- System Object	| Method | Value | Details
- Maximum # of semaphores per process | static | |
- Maximum value of a (counting) semaphore | static | |
- Maximum value of a (counting) semaphore | empirical | |
- Maximum size of a shared memory segment (bytes) | empirical | |
- Page size (bytes) | dynamic | |
- Physical pages in system | dynamic | |
- Maximum # of processes per user | dynamic | |
- Maximum filesize (bytes) | dynamic | |
- Maximum # of open files: hard limit | dynamic | |
- Maximum # of open files: soft limit | dynamic | |
- Clock resolution (msec) | dynamic | |
+| System Object	| Method | Value | Details |
+| -------------	| ------ | ----- | ------- |
+| Maximum # of semaphores per process | static | | |
+| Maximum value of a (counting) semaphore | static | | |
+| Maximum value of a (counting) semaphore | empirical | | |
+| Maximum size of a shared memory segment (bytes) | empirical | | |
+| Page size (bytes) | dynamic | | |
+| Physical pages in system | dynamic | | |
+| Maximum # of processes per user | dynamic | | |
+| Maximum filesize (bytes) | dynamic | | |
+| Maximum # of open files: hard limit | dynamic | | |
+| Maximum # of open files: soft limit | dynamic | | |
+| Clock resolution (msec) | dynamic | | |
