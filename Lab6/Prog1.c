@@ -26,12 +26,12 @@ int main(int argc, char **argv) {
   // Initialize wait sembuf
   wait_sbuf.sem_num = 0;  // Semaphore zero in set
   wait_sbuf.sem_op  = -1; // Decrement the semaphore
-  wait_sbuf.sem_flg = 0;  // No flags...?
+  wait_sbuf.sem_flg = 0;  // No flags
 
   // Initialize signal sembuf
   signal_sbuf.sem_num = 0;  // Semaphore zero in set
   signal_sbuf.sem_op  = 1; // Decrement the semaphore
-  signal_sbuf.sem_flg = 0;  // No flags...?
+  signal_sbuf.sem_flg = 0;  // No flags
 
   // Create a private semaphore
   sem_id = semget(IPC_PRIVATE, 1, 00600);
