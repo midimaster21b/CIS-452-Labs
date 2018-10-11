@@ -1,4 +1,3 @@
-
 #ifndef __MYSEM_H__
 #define __MYSEM_H__
 
