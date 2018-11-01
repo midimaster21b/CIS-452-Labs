@@ -8,8 +8,8 @@ int main() {
   char *data1;
 
   data1 = malloc(SIZE);
-  printf("Please input username: ");
-  scanf("%s", data1);
+  printf("Please input username(%d character max): ", SIZE - 1);
+  data1 = fgets(data1, SIZE, stdin);
   printf("you entered: %s\n", data1);
   free(data1);
   return 0;
