@@ -1,3 +1,5 @@
+// this is Sample Program 1!
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -34,6 +36,17 @@ int main(int argc, char *argv[])
 
   write(fd, buf, SIZE-2);
   sleep(10);
+
+  // Set flock struct to unlock
+  fileLock.l_type = F_UNLCK;
+
+  // Release the file lock
+  if(fcntl(fd, F_SETLK, &fileLock) < 0) {
+    perror("Error unlocking:");
+    exit(1);
+  }
+
+  // Close the file
   close(fd);
 
   return 0;
