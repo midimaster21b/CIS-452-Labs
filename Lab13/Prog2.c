@@ -12,7 +12,6 @@ int main(int argc, char *argv[])
   struct flock fileLock;
   int fd;
   char buf[SIZE] = "";
-  size_t str_len = 0;
 
   if(argc < 2) {
     printf("usage: filename\n");
@@ -35,9 +34,7 @@ int main(int argc, char *argv[])
   }
 
   // Read the first line
-  if(getline(&buf, &str_len, fd) != -1) {
-    printf("%s", buf);
-  }
+  read(fd, buf, SIZE);
 
   // Set flock struct to unlock
   fileLock.l_type = F_UNLCK;
@@ -50,6 +47,22 @@ int main(int argc, char *argv[])
 
   // Close the file
   close(fd);
+
+  char temp_char;
+
+  // Print out the first line
+  for(int x=0; x<SIZE; x++) {
+    temp_char = buf[x];
+
+    if(temp_char == '\0' || temp_char == '\n') {
+      break;
+    }
+    else {
+      printf("%c", temp_char);
+    }
+  }
+
+  printf("\n");
 
   return 0;
 }
