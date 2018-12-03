@@ -1,3 +1,11 @@
+/***************************************************************
+ * Title: Prog3.c
+ * Authors: Joshua Edgcombe <joshedgcombe@gmail.com>
+ *          Patton Finley <finleyp@mail.gvsu.edu>
+ *
+ * Description: A simple program to use the system calls to
+ *              interface with the filesystem similar to ls.
+ **************************************************************/
 #include <stdio.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -60,32 +68,23 @@ int main(int argc, char *argv[])
   char *filename;
 
   if(x == 1) {
-    /* dirPtr = opendir(argv[2]); */
     filename = argv[2];
   }
   else {
-    /* dirPtr = opendir(argv[1]); */
     filename = argv[1];
   }
 
   // Stat the file or directory supplied
   stat(filename, &statBuf);
 
-  // If regular file
-  if((S_IFREG & statBuf.st_mode) > 0) {
-    if(i_flag) {
-      printf("%ld\t", statBuf.st_ino);
-    }
-
-    if(n_flag) {
-      printf("%d:%d\t", statBuf.st_uid, statBuf.st_gid);
-    }
-
-    printf("%-20s\n", filename);
+  // Check if file or dir exists
+  if(statBuf.st_ino == 0) {
+    printf("Error: File not found\n");
+    return 1;
   }
 
   // If directory
-  else if((S_IFDIR & statBuf.st_mode) > 0) {
+  if((S_IFDIR & statBuf.st_mode) > 0) {
     // Determine if arguments were specified first or last
     if(x == 1) {
       dirPtr = opendir(argv[2]);
@@ -111,6 +110,20 @@ int main(int argc, char *argv[])
 
     closedir(dirPtr);
   }
+
+  // If regular file
+  else {
+    if(i_flag) {
+      printf("%ld\t", statBuf.st_ino);
+    }
+
+    if(n_flag) {
+      printf("%d:%d\t", statBuf.st_uid, statBuf.st_gid);
+    }
+
+    printf("%-20s\n", filename);
+  }
+
 
   return 0;
 }

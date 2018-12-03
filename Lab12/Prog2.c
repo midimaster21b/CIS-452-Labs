@@ -1,3 +1,11 @@
+/***************************************************************
+ * Title: Prog2.c
+ * Authors: Joshua Edgcombe <joshedgcombe@gmail.com>
+ *          Patton Finley <finleyp@mail.gvsu.edu>
+ *
+ * Description: A simple program that prints the contents of
+ *              the current directory.
+ **************************************************************/
 #include <stdio.h>
 #include <dirent.h>
 #include <sys/stat.h>

@@ -1,3 +1,11 @@
+/***************************************************************
+ * Title: Prog1.c
+ * Authors: Joshua Edgcombe <joshedgcombe@gmail.com>
+ *          Patton Finley <finleyp@mail.gvsu.edu>
+ *
+ * Description: A program that prints whether a file is a
+ *              regular file or a directory
+ **************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
